@@ -1,4 +1,4 @@
-- hosts: openobserve_nodes
+- hosts: local
   become: true
   vars_files:
     - ../group_vars/all/openobserve_vars.yml
