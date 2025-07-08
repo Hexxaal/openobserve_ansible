@@ -1,0 +1,7 @@
+- hosts: openobserve_nodes
+  become: true
+  vars_files:
+    - ../group_vars/all/openobserve_vars.yml
+  roles:
+    - openobserve
+    - nginx_openobserve

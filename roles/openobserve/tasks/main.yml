@@ -1,0 +1,34 @@
+---
+- name: Ensure data directory exists
+  file:
+    path: "{{ openobserve_data_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Run OpenObserve container
+  community.docker.docker_container:
+    name: "{{ openobserve_container_name }}"
+    image: "{{ openobserve_image }}"
+    state: started
+    restart_policy: unless-stopped
+    env:
+      ZO_DATA_DIR: "{{ openobserve_data_dir }}"
+      ZO_ROOT_USER_EMAIL: "{{ openobserve_root_email }}"
+      ZO_ROOT_USER_PASSWORD: "{{ openobserve_root_password }}"
+    volumes:
+      - "{{ openobserve_data_dir }}:{{ openobserve_data_dir }}"
+    published_ports:
+      - "127.0.0.1:5080:5080"
+
+- name: Recreate container without creds on subsequent runs
+  community.docker.docker_container:
+    name: "{{ openobserve_container_name }}"
+    recreate: true
+    env:
+      ZO_DATA_DIR: "{{ openobserve_data_dir }}"
+    volumes:
+      - "{{ openobserve_data_dir }}:{{ openobserve_data_dir }}"
+    published_ports:
+      - "127.0.0.1:5080:5080"

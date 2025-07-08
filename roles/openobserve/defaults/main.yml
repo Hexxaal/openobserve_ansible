@@ -1,0 +1,4 @@
+---
+openobserve_data_dir: "/opt/openobserve/data"
+openobserve_image: "public.ecr.aws/zinclabs/openobserve:latest"
+openobserve_container_name: "openobserve"

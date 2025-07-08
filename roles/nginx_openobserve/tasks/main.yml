@@ -1,0 +1,65 @@
+---
+- name: Install Nginx
+  apt:
+    name: nginx
+    state: present
+    update_cache: yes
+
+- name: Create Cloudflare SSL directory
+  file:
+    path: /etc/ssl/cloudflare
+    state: directory
+    mode: '0700'
+
+- name: Copy Origin Certificate
+  copy:
+    src: "{{ ssl_cert_src }}"
+    dest: "{{ ssl_cert_dest }}"
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Copy Origin Key
+  copy:
+    src: "{{ ssl_key_src }}"
+    dest: "{{ ssl_key_dest }}"
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Deploy Nginx site config
+  template:
+    src: logs.conf.j2
+    dest: /etc/nginx/sites-available/logs.conf
+  notify: Reload Nginx
+
+- name: Enable site
+  file:
+    src: /etc/nginx/sites-available/logs.conf
+    dest: /etc/nginx/sites-enabled/logs.conf
+    state: link
+  notify: Reload Nginx
+
+- name: Disable default site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Reload Nginx
+
+- name: Allow HTTP & HTTPS through UFW
+  ufw:
+    rule: allow
+    port: "80,443"
+    proto: tcp
+
+- name: Ensure Nginx is running and enabled
+  service:
+    name: nginx
+    state: started
+    enabled: yes
+
+- handlers:
+  - name: Reload Nginx
+    service:
+      name: nginx
+      state: reloaded

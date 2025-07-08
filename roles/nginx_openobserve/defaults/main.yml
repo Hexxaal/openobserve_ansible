@@ -1,0 +1,6 @@
+---
+openobserve_domain: "{{ cluster_domain }}"
+ssl_cert_src: "origin.pem"
+ssl_key_src:  "origin-key.pem"
+ssl_cert_dest: "/etc/ssl/cloudflare/fullchain.pem"
+ssl_key_dest:  "/etc/ssl/cloudflare/privkey.pem"
