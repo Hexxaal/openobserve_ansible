@@ -21,6 +21,9 @@
       - "{{ openobserve_data_dir }}:{{ openobserve_data_dir }}"
     published_ports:
       - "127.0.0.1:5080:5080"
+      - "127.0.0.1:5081:5081"
+      # Publish syslog port for OpenObserve
+      - "127.0.0.1:5140:5140"
 
 - name: Recreate container without creds on subsequent runs
   community.docker.docker_container:
@@ -32,3 +35,6 @@
       - "{{ openobserve_data_dir }}:{{ openobserve_data_dir }}"
     published_ports:
       - "127.0.0.1:5080:5080"
+      - "127.0.0.1:5081:5081"
+      # Publish syslog port for OpenObserve
+      - "127.0.0.1:5140:5140"
