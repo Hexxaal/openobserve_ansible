@@ -46,12 +46,6 @@
     state: absent
   notify: Reload Nginx
 
-- name: Allow HTTP & HTTPS through UFW
-  ufw:
-    rule: allow
-    port: "80,443"
-    proto: tcp
-
 - name: Ensure Nginx is running and enabled
   service:
     name: nginx
