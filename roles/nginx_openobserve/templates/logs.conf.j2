@@ -1,75 +1,40 @@
-user www-data;
-worker_processes auto;
-pid /run/nginx.pid;
-error_log /var/log/nginx/error.log warn;                   # Global error log :contentReference[oaicite:7]{index=7}
-
-events {
-    worker_connections 1024;                              # Max simultaneous connections :contentReference[oaicite:8]{index=8}
+# Redirect HTTP → HTTPS
+server {
+    listen      80;
+    server_name {{ openobserve_domain }};
+    return      301 https://$host$request_uri;
 }
 
-http {
-    include       /etc/nginx/mime.types;                   # MIME mappings :contentReference[oaicite:9]{index=9}
-    default_type  application/octet-stream;
+# HTTPS with proxy
+server {
+    listen 443 ssl http2;
+    server_name {{ openobserve_domain }};
 
-    log_format  main  '$remote_addr - $remote_user [$time_local] '
-                      '"$request" $status $body_bytes_sent '
-                      '"$http_referer" "$http_user_agent"';  # Combined log format :contentReference[oaicite:10]{index=10}
+    ssl_certificate     {{ ssl_cert_dest }};
+    ssl_certificate_key {{ ssl_key_dest }};
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
-    access_log  /var/log/nginx/access.log  main;
-    sendfile        on;                                     # High-performance file serving :contentReference[oaicite:11]{index=11}
-    tcp_nopush      on;
-    keepalive_timeout  65;
-    gzip            on;                                     # Compression :contentReference[oaicite:12]{index=12}
-
-    #─────────────────────────────────────────────────────────────────────────────
-    # HTTP → HTTPS redirect
-    #─────────────────────────────────────────────────────────────────────────────
-    server {
-        listen      80;
-        server_name {{ openobserve_domain }};
-        return      301 https://$host$request_uri;         # Permanent redirect :contentReference[oaicite:13]{index=13}
+    # 1️⃣ API & ingestion
+    location ^~ /api/ {
+        proxy_pass            http://127.0.0.1:5080;
+        proxy_set_header      Host              $host;
+        proxy_set_header      X-Real-IP         $remote_addr;
+        proxy_set_header      X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header      X-Forwarded-Proto $scheme;
+        proxy_set_header      Authorization     $http_authorization;
+        client_max_body_size  200M;
+        proxy_read_timeout    90s;
     }
 
-    #─────────────────────────────────────────────────────────────────────────────
-    # HTTPS with SSL termination and reverse-proxy
-    #─────────────────────────────────────────────────────────────────────────────
-    server {
-        listen 443 ssl http2;
-        server_name {{ openobserve_domain }};
-
-        ssl_certificate     {{ ssl_cert_dest }};
-        ssl_certificate_key {{ ssl_key_dest }};
-        ssl_protocols       TLSv1.2 TLSv1.3;
-        ssl_ciphers         HIGH:!aNULL:!MD5;                # Strong ciphers :contentReference[oaicite:14]{index=14}
-
-        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;  
-                                                            # HSTS :contentReference[oaicite:15]{index=15}
-
-        #─────────────────────────────────────────────────────────────────────────
-        #   API & ingestion endpoints (must be first)
-        #─────────────────────────────────────────────────────────────────────────
-        location ^~ /api/ {
-            proxy_pass         http://127.0.0.1:5080;           # OpenObserve backend :contentReference[oaicite:16]{index=16}
-            proxy_set_header   Host              $host;        # Preserve Host :contentReference[oaicite:17]{index=17}
-            proxy_set_header   X-Real-IP         $remote_addr; # Client IP :contentReference[oaicite:18]{index=18}
-            proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
-            proxy_set_header   X-Forwarded-Proto $scheme;
-            proxy_set_header   Authorization      $http_authorization;  
-                                                            # Forward Basic Auth :contentReference[oaicite:19]{index=19}
-            client_max_body_size 200M;                         # Up from 1M default :contentReference[oaicite:20]{index=20}
-            proxy_read_timeout 90s;                             # Preserve original timeout
-        }
-
-        #─────────────────────────────────────────────────────────────────────────
-        #   UI, Swagger, static assets (catch-all)
-        #─────────────────────────────────────────────────────────────────────────
-        location / {
-            proxy_pass         http://127.0.0.1:5080;
-            proxy_set_header   Host              $host;
-            proxy_set_header   X-Real-IP         $remote_addr;
-            proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
-            proxy_set_header   X-Forwarded-Proto $scheme;
-            proxy_read_timeout 90s;
-        }
+    # 2️⃣ UI, Swagger, static assets
+    location / {
+        proxy_pass         http://127.0.0.1:5080;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_read_timeout 90s;
     }
 }
