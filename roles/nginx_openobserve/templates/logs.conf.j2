@@ -46,7 +46,7 @@ http {
                                                             # HSTS :contentReference[oaicite:15]{index=15}
 
         #─────────────────────────────────────────────────────────────────────────
-        # 1️⃣  API & ingestion endpoints (must be first)
+        #   API & ingestion endpoints (must be first)
         #─────────────────────────────────────────────────────────────────────────
         location ^~ /api/ {
             proxy_pass         http://127.0.0.1:5080;           # OpenObserve backend :contentReference[oaicite:16]{index=16}
@@ -61,7 +61,7 @@ http {
         }
 
         #─────────────────────────────────────────────────────────────────────────
-        # 2️⃣  UI, Swagger, static assets (catch-all)
+        #   UI, Swagger, static assets (catch-all)
         #─────────────────────────────────────────────────────────────────────────
         location / {
             proxy_pass         http://127.0.0.1:5080;
